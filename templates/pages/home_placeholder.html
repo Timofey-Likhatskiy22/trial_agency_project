@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="bg-gradient-to-r from-orange-800 to-orange-600 text-white py-20 px-4">
+    <div class="container mx-auto text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6">Добро пожаловать!</h1>
+        <p class="text-xl md:text-2xl mb-8">Ваш сайт почти готов к работе</p>
+        <p class="text-lg mb-8">Зайдите в административную панель и создайте страницу с slug "home"</p>
+        <a href="/admin" class="bg-white text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition">
+            Перейти в админ-панель
+        </a>
+    </div>
+</section>
+{% endblock %}

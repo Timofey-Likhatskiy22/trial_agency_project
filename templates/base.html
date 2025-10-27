@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_settings.site_name }}{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        
+        .slider {
+            transition: all 0.5s ease;
+        }
+        
+        .slide {
+            min-width: 100%;
+        }
+        
+        .hero-gradient {
+            position: relative;
+        }
+        
+        .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, var(--gradient-color));
+            opacity: var(--gradient-opacity);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Шапка -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <!-- Логотип и название -->
+            <div class="flex items-center">
+                <a href="/" class="flex items-center">
+                    {% if site_settings.logo %}
+                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 mr-3">
+                    {% else %}
+                    <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
+                        {{ site_settings.site_name|first }}
+                    </div>
+                    {% endif %}
+                    <h1 class="text-2xl font-bold text-gray-800">{{ site_settings.site_name }}</h1>
+                </a>
+            </div>
+            
+            <!-- Навигация -->
+            <nav class="hidden md:flex items-center space-x-8">
+                {% for category, pages in menu_items.items %}
+                    {% if pages %}
+                        {% if category == 'main' %}
+                            <!-- Главная страница -->
+                            <a href="/" class="text-gray-700 hover:text-orange-600 font-medium">Главная</a>
+                        {% else %}
+                            <!-- Выпадающие меню для категорий -->
+                            <div class="dropdown relative">
+                                <button class="text-gray-700 hover:text-orange-600 font-medium flex items-center">
+                                    {{ pages.0.get_category_display }}
+                                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                </button>
+                                <div class="dropdown-menu absolute hidden bg-white shadow-lg rounded-md mt-2 py-2 w-48">
+                                    {% for page in pages %}
+                                        <a href="/{{ page.slug }}/" class="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-600">
+                                            {{ page.title }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- О нас -->
+                <a href="/info/" class="text-gray-700 hover:text-orange-600 font-medium">О нас</a>
+            </nav>
+            
+            <!-- Контакты -->
+            <div class="hidden md:block text-right">
+                <div class="text-orange-600 font-semibold">{{ site_settings.phone }}</div>
+                <div class="text-gray-600 text-sm">{{ site_settings.email }}</div>
+            </div>
+            
+            <!-- Мобильное меню -->
+            <button class="md:hidden text-gray-700" id="mobile-menu-button">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+        
+        <!-- Мобильное меню (скрыто) -->
+        <div class="md:hidden hidden bg-white border-t" id="mobile-menu">
+            <div class="container mx-auto px-4 py-3">
+                <div class="flex flex-col space-y-4">
+                    <a href="/" class="text-gray-700 font-medium">Главная</a>
+                    
+                    {% for category, pages in menu_items.items %}
+                        {% if pages and category != 'main' %}
+                        <div class="dropdown">
+                            <button class="text-gray-700 font-medium flex items-center justify-between w-full">
+                                {{ pages.0.get_category_display }}
+                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            </button>
+                            <div class="dropdown-menu hidden pl-4 mt-2">
+                                {% for page in pages %}
+                                    <a href="/{{ page.slug }}/" class="block py-2 text-gray-700">{{ page.title }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <a href="/info/" class="text-gray-700 font-medium">О нас</a>
+                    
+                    <div class="pt-4 border-t">
+                        <div class="text-orange-600 font-semibold">{{ site_settings.phone }}</div>
+                        <div class="text-gray-600 text-sm">{{ site_settings.email }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Подвал -->
+    <footer class="bg-gray-800 text-white py-12 px-4">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- О компании -->
+                <div>
+                    <div class="flex items-center mb-4">
+                        {% if site_settings.logo %}
+                        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 mr-3">
+                        {% else %}
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
+                            {{ site_settings.site_name|first }}
+                        </div>
+                        {% endif %}
+                        <h3 class="text-xl font-bold">{{ site_settings.site_name }}</h3>
+                    </div>
+                    <p class="text-gray-300 mb-4">Рекламное агентство полного цикла. Создаем эффективные рекламные решения.</p>
+                </div>
+                
+                <!-- Контакты -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt text-orange-400 mt-1 mr-3"></i>
+                            <span>{{ site_settings.address }}</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone-alt text-blue-400 mr-3"></i>
+                            <span>{{ site_settings.phone }}</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope text-blue-400 mr-3"></i>
+                            <span>{{ site_settings.email }}</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-clock text-blue-400 mr-3"></i>
+                            <span>{{ site_settings.working_hours }}</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Услуги -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Услуги</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">Наружная реклама</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Интерьерная реклама</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Широкоформатная печать</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Сувенирная продукция</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 {{ site_settings.site_name }}. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Мобильное меню
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', () => {
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                    mobileMenu.classList.toggle('hidden');
+                }
+            });
+        }
+
+        // Выпадающие меню для мобильной версии
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileDropdowns = document.querySelectorAll('#mobile-menu .dropdown');
+            mobileDropdowns.forEach(dropdown => {
+                const button = dropdown.querySelector('button');
+                const menu = dropdown.querySelector('.dropdown-menu');
+                
+                button.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                });
+            });
+        });
+
+        // Слайдеры
+        function initSlider(sliderElement) {
+            const slider = sliderElement.querySelector('.slider-container');
+            const slides = slider.querySelectorAll('.slide');
+            const dots = sliderElement.querySelectorAll('.slider-dot');
+            const prevButton = sliderElement.querySelector('.slider-prev');
+            const nextButton = sliderElement.querySelector('.slider-next');
+            const autoplay = sliderElement.dataset.autoplay === 'true';
+            const interval = parseInt(sliderElement.dataset.interval);
+            
+            if (slides.length <= 1) return;
+            
+            let currentSlide = 0;
+            let slideInterval;
+            
+            function goToSlide(index) {
+                slider.style.transform = `translateX(-${index * 100}%)`;
+                currentSlide = index;
+                
+                dots.forEach(dot => dot.classList.remove('bg-white', 'bg-opacity-100'));
+                if (dots[index]) {
+                    dots[index].classList.add('bg-white', 'bg-opacity-100');
+                }
+            }
+            
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                goToSlide(currentSlide);
+            }
+            
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                goToSlide(currentSlide);
+            }
+            
+            function startAutoplay() {
+                if (autoplay) {
+                    slideInterval = setInterval(nextSlide, interval);
+                }
+            }
+            
+            function resetAutoplay() {
+                if (autoplay) {
+                    clearInterval(slideInterval);
+                    startAutoplay();
+                }
+            }
+            
+            // Инициализация
+            if (prevButton) prevButton.addEventListener('click', () => { prevSlide(); resetAutoplay(); });
+            if (nextButton) nextButton.addEventListener('click', () => { nextSlide(); resetAutoplay(); });
+            
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const index = parseInt(dot.getAttribute('data-index'));
+                    goToSlide(index);
+                    resetAutoplay();
+                });
+            });
+            
+            startAutoplay();
+            
+            // Инициализация первой точки
+            if (dots[0]) dots[0].classList.add('bg-white', 'bg-opacity-100');
+        }
+
+        // Инициализация всех слайдеров на странице
+        document.addEventListener('DOMContentLoaded', function() {
+            const sliders = document.querySelectorAll('.slider-section');
+            sliders.forEach(initSlider);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
