@@ -131,7 +131,6 @@
 </div>
 {% endblock %}
 
-<!-- В блоке extra_js ЗАМЕНИТЕ весь JavaScript код на этот: -->
 {% block extra_js %}
 <script src="https://api-maps.yandex.ru/2.1/?apikey=b0f7ece5-e9cd-48b8-8b89-1de9552b1f4d&lang=ru_RU" type="text/javascript"></script>
 <script>
@@ -139,6 +138,7 @@
     let mapInstance = null;
     let allPlacemarks = {};
     let adboardItems = null;
+    let currentExpandedBalloon = null;
 
     // Правильные координаты Славгорода для Яндекс.Карт
     const SLAVGOROD_CENTER = [53.00, 78.65];
@@ -146,9 +146,6 @@
     // Загружаем данные из JSON
     const adboardsData = JSON.parse('{{ adboards_json|escapejs }}');
     console.log('Загружено носителей:', adboardsData.length);
-    adboardsData.forEach(adboard => {
-        console.log('Носитель:', adboard.title, 'координаты:', adboard.lat, adboard.lon);
-    });
 
     // Функция для получения цвета метки по типу
     function getPlacemarkColor(adType) {
@@ -160,6 +157,176 @@
             'pillar': '#6b7280'       // gray
         };
         return colors[adType] || '#3b82f6';
+    }
+
+    // Функция для создания краткого содержимого балуна
+    function createShortBalloonContent(adboard) {
+        return `
+            <div class="p-3 max-w-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-lg">${adboard.title}</h3>
+                    <button class="close-balloon text-gray-500 hover:text-gray-700 text-lg" title="Закрыть" data-id="${adboard.id}">
+                        ✕
+                    </button>
+                </div>
+                <p class="text-gray-600 mb-2">${adboard.address}</p>
+                <p class="text-sm mb-2">
+                    <strong>Тип:</strong> 
+                    <span class="inline-block px-2 py-1 text-xs rounded ${
+                        adboard.ad_type === 'billboard' ? 'bg-blue-100 text-blue-800' :
+                        adboard.ad_type === 'led_screen' ? 'bg-green-100 text-green-800' :
+                        adboard.ad_type === 'prismatron' ? 'bg-purple-100 text-purple-800' :
+                        adboard.ad_type === 'citylight' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                    }">
+                        ${adboard.get_ad_type_display}
+                    </span>
+                </p>
+                ${adboard.price ? `<p class="text-lg font-bold text-orange-600 mb-3">${adboard.price} ₽/месяц</p>` : ''}
+                <div class="flex gap-2">
+                    <button class="expand-balloon flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition text-sm" data-id="${adboard.id}">
+                        📖 Подробнее
+                    </button>
+                    <button class="select-in-list bg-gray-200 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-300 transition text-sm" data-id="${adboard.id}">
+                        📋 В списке
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Функция для создания развернутого содержимого балуна
+    function createExpandedBalloonContent(adboard) {
+        let photoHtml = '';
+        if (adboard.photo) {
+            photoHtml = `
+                <div class="mb-4">
+                    <img src="${adboard.photo}" alt="${adboard.title}" 
+                         class="w-full h-48 object-cover rounded-lg shadow-md">
+                </div>
+            `;
+        }
+
+        let priceHtml = '';
+        if (adboard.price) {
+            priceHtml = `
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                    <div class="text-xl font-bold text-orange-600">${adboard.price} ₽</div>
+                    <div class="text-orange-700 text-sm">в месяц</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="p-4 max-w-md max-h-96 overflow-y-auto">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-bold text-lg">${adboard.title}</h3>
+                    <button class="collapse-balloon text-gray-500 hover:text-gray-700 text-lg" data-id="${adboard.id}">
+                        ✕
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Адрес:</h4>
+                        <p class="text-gray-600">${adboard.address}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Тип носителя:</h4>
+                        <span class="inline-block px-2 py-1 text-sm rounded ${
+                            adboard.ad_type === 'billboard' ? 'bg-blue-100 text-blue-800' :
+                            adboard.ad_type === 'led_screen' ? 'bg-green-100 text-green-800' :
+                            adboard.ad_type === 'prismatron' ? 'bg-purple-100 text-purple-800' :
+                            adboard.ad_type === 'citylight' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                        }">
+                            ${adboard.get_ad_type_display}
+                        </span>
+                    </div>
+                    
+                    ${adboard.description ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Описание:</h4>
+                        <p class="text-gray-600 text-sm whitespace-pre-line">${adboard.description}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${adboard.rental_terms ? `
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Условия аренды:</h4>
+                        <p class="text-gray-600 text-sm whitespace-pre-line">${adboard.rental_terms}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="mt-4 grid grid-cols-1 gap-4">
+                    ${priceHtml}
+                    ${photoHtml}
+                    
+                    ${adboard.contact_info ? `
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <h4 class="font-semibold text-gray-700 mb-1">Контактная информация:</h4>
+                        <p class="text-gray-600 text-sm whitespace-pre-line">${adboard.contact_info}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <button class="select-in-list mt-4 w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition" data-id="${adboard.id}">
+                    📋 Показать в списке
+                </button>
+            </div>
+        `;
+    }
+
+    // Функция для разворачивания балуна
+    function expandBalloon(adboardId) {
+        const adboard = adboardsData.find(a => a.id === adboardId);
+        if (!adboard) return;
+
+        const placemark = allPlacemarks[adboardId];
+        if (placemark) {
+            // Закрываем предыдущий развернутый балун
+            if (currentExpandedBalloon && currentExpandedBalloon !== placemark) {
+                currentExpandedBalloon.balloon.close();
+            }
+            
+            // Устанавливаем развернутое содержимое
+            placemark.properties.set({
+                balloonContent: createExpandedBalloonContent(adboard)
+            });
+            
+            // Открываем балун
+            placemark.balloon.open();
+            currentExpandedBalloon = placemark;
+        }
+    }
+
+    // Функция для сворачивания балуна
+    function collapseBalloon(adboardId) {
+        const adboard = adboardsData.find(a => a.id === adboardId);
+        if (!adboard) return;
+
+        const placemark = allPlacemarks[adboardId];
+        if (placemark) {
+            // Устанавливаем краткое содержимое
+            placemark.properties.set({
+                balloonContent: createShortBalloonContent(adboard)
+            });
+            
+            // Открываем балун с кратким содержимым
+            placemark.balloon.open();
+            currentExpandedBalloon = null;
+        }
+    }
+
+    // Функция для закрытия балуна
+    function closeBalloon(adboardId) {
+        const placemark = allPlacemarks[adboardId];
+        if (placemark) {
+            placemark.balloon.close();
+            currentExpandedBalloon = null;
+        }
     }
 
     // Функция для приближения ко всем меткам
@@ -182,17 +349,10 @@
         }
     }
 
-    // Функция для выбора рекламного носителя
-    function selectAdboard(adboardId) {
+    // Функция для выбора рекламного носителя в списке
+    function selectAdboardInList(adboardId) {
         const adboard = adboardsData.find(a => a.id === adboardId);
         if (!adboard) return;
-
-        // Центрируем карту на выбранной метке
-        const placemark = allPlacemarks[adboardId];
-        if (placemark) {
-            mapInstance.setCenter([adboard.lat, adboard.lon], 16);
-            placemark.balloon.open();
-        }
 
         // Подсвечиваем элемент в списке
         if (adboardItems) {
@@ -204,94 +364,6 @@
                 }
             });
         }
-
-        // Показываем детальную информацию
-        showAdboardDetails(adboard);
-    }
-
-    // Функция для отображения детальной информации
-    function showAdboardDetails(adboard) {
-        const detailsContainer = document.getElementById('adboard-details');
-        const detailsContent = document.getElementById('details-content');
-        
-        let photoHtml = '';
-        if (adboard.photo) {
-            photoHtml = `
-                <div class="mb-4">
-                    <img src="${adboard.photo}" alt="${adboard.title}" 
-                         class="w-full h-64 object-cover rounded-lg shadow-md">
-                </div>
-            `;
-        }
-
-        let priceHtml = '';
-        if (adboard.price) {
-            priceHtml = `
-                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                    <div class="text-2xl font-bold text-orange-600">${adboard.price} ₽</div>
-                    <div class="text-orange-700">в месяц</div>
-                </div>
-            `;
-        }
-
-        detailsContent.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">${adboard.title}</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">Адрес:</h3>
-                            <p class="text-gray-600">${adboard.address}</p>
-                        </div>
-                        
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">Тип носителя:</h3>
-                            <span class="inline-block px-3 py-1 rounded-full 
-                                ${adboard.ad_type === 'billboard' ? 'bg-blue-100 text-blue-800' :
-                                  adboard.ad_type === 'led_screen' ? 'bg-green-100 text-green-800' :
-                                  adboard.ad_type === 'prismatron' ? 'bg-purple-100 text-purple-800' :
-                                  adboard.ad_type === 'citylight' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'}">
-                                ${adboard.get_ad_type_display}
-                            </span>
-                        </div>
-                        
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">Координаты:</h3>
-                            <p class="text-gray-600">${adboard.lat}, ${adboard.lon}</p>
-                        </div>
-                        
-                        ${adboard.description ? `
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">Описание:</h3>
-                            <p class="text-gray-600 whitespace-pre-line">${adboard.description}</p>
-                        </div>
-                        ` : ''}
-                        
-                        ${adboard.rental_terms ? `
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">Условия аренды:</h3>
-                            <p class="text-gray-600 whitespace-pre-line">${adboard.rental_terms}</p>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                <div class="lg:col-span-1">
-                    ${priceHtml}
-                    ${photoHtml}
-                    
-                    ${adboard.contact_info ? `
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h3 class="font-semibold text-gray-700 mb-2">Контактная информация:</h3>
-                        <p class="text-gray-600 whitespace-pre-line">${adboard.contact_info}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-        
-        detailsContainer.classList.remove('hidden');
     }
 
     // Функция фильтрации списка и меток
@@ -344,29 +416,22 @@
                         const placemark = new ymaps.Placemark(
                             [adboard.lat, adboard.lon],
                             {
-                                balloonContentHeader: adboard.title,
-                                balloonContentBody: `
-                                    <div class="p-2 max-w-sm">
-                                        <p class="text-gray-600 mb-2">${adboard.address}</p>
-                                        <p class="text-sm mb-2"><strong>Тип:</strong> ${adboard.get_ad_type_display}</p>
-                                        <p class="text-sm mb-2"><strong>Координаты:</strong> ${adboard.lat}, ${adboard.lon}</p>
-                                        ${adboard.price ? `<p class="text-lg font-bold text-orange-600 mb-2">${adboard.price} ₽/месяц</p>` : ''}
-                                        <button class="select-adboard w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition" data-id="${adboard.id}">
-                                            Подробнее
-                                        </button>
-                                    </div>
-                                `,
+                                balloonContent: createShortBalloonContent(adboard),
                                 hintContent: adboard.title
                             },
                             {
                                 preset: 'islands#dotIcon',
-                                iconColor: getPlacemarkColor(adboard.ad_type)
+                                iconColor: getPlacemarkColor(adboard.ad_type),
+                                balloonCloseButton: false
                             }
                         );
 
                         // Обработчик клика на метку
                         placemark.events.add('click', function() {
-                            selectAdboard(adboard.id);
+                            // При клике на метку показываем краткую информацию
+                            if (currentExpandedBalloon === placemark) {
+                                collapseBalloon(adboard.id);
+                            }
                         });
 
                         mapInstance.geoObjects.add(placemark);
@@ -386,7 +451,12 @@
                 adboardItems.forEach(item => {
                     item.addEventListener('click', function() {
                         const adboardId = parseInt(this.dataset.id);
-                        selectAdboard(adboardId);
+                        const placemark = allPlacemarks[adboardId];
+                        if (placemark) {
+                            mapInstance.setCenter(placemark.geometry.getCoordinates(), 16);
+                            placemark.balloon.open();
+                        }
+                        selectAdboardInList(adboardId);
                     });
                 });
 
@@ -394,11 +464,27 @@
                 document.getElementById('zoom-to-all').addEventListener('click', zoomToAllPlacemarks);
                 document.getElementById('reset-center').addEventListener('click', resetToCityCenter);
 
-                // Обработчики для кнопок в балунах
+                // Обработчики для кнопок в балунах (делегирование событий)
                 document.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('select-adboard')) {
+                    if (e.target.classList.contains('expand-balloon')) {
                         const adboardId = parseInt(e.target.getAttribute('data-id'));
-                        selectAdboard(adboardId);
+                        expandBalloon(adboardId);
+                        selectAdboardInList(adboardId);
+                    }
+                    
+                    if (e.target.classList.contains('collapse-balloon')) {
+                        const adboardId = parseInt(e.target.getAttribute('data-id'));
+                        collapseBalloon(adboardId);
+                    }
+                    
+                    if (e.target.classList.contains('close-balloon')) {
+                        const adboardId = parseInt(e.target.getAttribute('data-id'));
+                        closeBalloon(adboardId);
+                    }
+                    
+                    if (e.target.classList.contains('select-in-list')) {
+                        const adboardId = parseInt(e.target.getAttribute('data-id'));
+                        selectAdboardInList(adboardId);
                     }
                 });
 
