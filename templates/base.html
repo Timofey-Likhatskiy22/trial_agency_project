@@ -62,6 +62,11 @@
             
             <!-- Навигация -->
             <nav class="hidden md:flex items-center space-x-8">
+
+                
+                <!-- Добавляем пункт меню для аренды -->
+                <a href="/map/" class="text-gray-700 hover:text-orange-600 font-medium">Аренда рекламных носителей</a>
+                
                 {% for category, pages in menu_items.items %}
                     {% if pages %}
                         {% if category == 'main' %}
@@ -107,6 +112,9 @@
             <div class="container mx-auto px-4 py-3">
                 <div class="flex flex-col space-y-4">
                     <a href="/" class="text-gray-700 font-medium">Главная</a>
+                    
+                    <!-- Добавляем пункт для аренды в мобильное меню -->
+                    <a href="/map/" class="text-gray-700 font-medium">Аренда рекламных носителей</a>
                     
                     {% for category, pages in menu_items.items %}
                         {% if pages and category != 'main' %}
@@ -191,6 +199,17 @@
                         <li><a href="#" class="text-gray-300 hover:text-white">Интерьерная реклама</a></li>
                         <li><a href="#" class="text-gray-300 hover:text-white">Широкоформатная печать</a></li>
                         <li><a href="#" class="text-gray-300 hover:text-white">Сувенирная продукция</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Быстрые ссылки -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Быстрые ссылки</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/map/" class="text-gray-300 hover:text-white">Аренда рекламных носителей</a></li>
+                        <li><a href="/info/" class="text-gray-300 hover:text-white">О нас</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Портфолио</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Контакты</a></li>
                     </ul>
                 </div>
             </div>

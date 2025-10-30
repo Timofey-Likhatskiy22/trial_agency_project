@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        #map {
+            height: 70vh;
+            min-height: 500px;
+        }
+        .adboard-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .adboard-item:hover {
+            background-color: #f3f4f6;
+        }
+        .adboard-item.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .adboard-item.active h3,
+        .adboard-item.active p,
+        .adboard-item.active span {
+            color: white !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8 text-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">{{ page_title }}</h1>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+            Интерактивная карта рекламных носителей в городе Славгород. 
+            Выберите носитель на карте или в списке для получения подробной информации.
+        </p>
+    </div>
+
+    <!-- Панель управления картой -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="font-semibold text-gray-700">Управление картой:</span>
+            <button id="zoom-to-all" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                📍 Показать все метки
+            </button>
+            <button id="reset-center" class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">
+                🏙️ Центр города
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Панель с информацией и списком -->
+        <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-4">
+            <!-- Поиск и фильтры -->
+            <div class="mb-4">
+                <input type="text" id="search-input" placeholder="Поиск по названию или адресу..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="mb-4">
+                <select id="type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Все типы носителей</option>
+                    <option value="billboard">Билборды</option>
+                    <option value="led_screen">LED-экраны</option>
+                    <option value="prismatron">Призматроны</option>
+                    <option value="citylight">Ситилайты</option>
+                    <option value="pillar">Столбы</option>
+                </select>
+            </div>
+
+            <!-- Список носителей -->
+            <div id="adboards-list" class="space-y-3 max-h-96 overflow-y-auto">
+                {% for adboard in adboards %}
+                <div class="adboard-item p-3 border border-gray-200 rounded-md" 
+                     data-id="{{ adboard.id }}"
+                     data-type="{{ adboard.ad_type }}"
+                     data-lat="{{ adboard.lat }}"
+                     data-lon="{{ adboard.lon }}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">{{ adboard.title }}</h3>
+                            <p class="text-sm text-gray-600">{{ adboard.address }}</p>
+                            <span class="inline-block mt-1 px-2 py-1 text-xs rounded 
+                                {% if adboard.ad_type == 'billboard' %}bg-blue-100 text-blue-800
+                                {% elif adboard.ad_type == 'led_screen' %}bg-green-100 text-green-800
+                                {% elif adboard.ad_type == 'prismatron' %}bg-purple-100 text-purple-800
+                                {% elif adboard.ad_type == 'citylight' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ adboard.get_ad_type_display }}
+                            </span>
+                        </div>
+                        {% if adboard.price %}
+                        <div class="text-right">
+                            <span class="text-lg font-bold text-orange-600">{{ adboard.price }} ₽</span>
+                            <div class="text-xs text-gray-500">в месяц</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-gray-500 py-4">
+                    Нет доступных рекламных носителей
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Карта и детальная информация -->
+        <div class="lg:col-span-3">
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Карта -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div id="map"></div>
+                </div>
+                
+                <!-- Детальная информация (будет заполняться при выборе носителя) -->
+                <div id="adboard-details" class="bg-white rounded-lg shadow-md p-6 hidden">
+                    <div id="details-content">
+                        <!-- Контент будет заполняться JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- В блоке extra_js ЗАМЕНИТЕ весь JavaScript код на этот: -->
+{% block extra_js %}
+<script src="https://api-maps.yandex.ru/2.1/?apikey=b0f7ece5-e9cd-48b8-8b89-1de9552b1f4d&lang=ru_RU" type="text/javascript"></script>
+<script>
+    // Глобальные переменные
+    let mapInstance = null;
+    let allPlacemarks = {};
+    let adboardItems = null;
+
+    // Правильные координаты Славгорода для Яндекс.Карт
+    const SLAVGOROD_CENTER = [53.00, 78.65];
+
+    // Загружаем данные из JSON
+    const adboardsData = JSON.parse('{{ adboards_json|escapejs }}');
+    console.log('Загружено носителей:', adboardsData.length);
+    adboardsData.forEach(adboard => {
+        console.log('Носитель:', adboard.title, 'координаты:', adboard.lat, adboard.lon);
+    });
+
+    // Функция для получения цвета метки по типу
+    function getPlacemarkColor(adType) {
+        const colors = {
+            'billboard': '#3b82f6',   // blue
+            'led_screen': '#10b981',  // green
+            'prismatron': '#8b5cf6',  // purple
+            'citylight': '#f59e0b',   // yellow
+            'pillar': '#6b7280'       // gray
+        };
+        return colors[adType] || '#3b82f6';
+    }
+
+    // Функция для приближения ко всем меткам
+    function zoomToAllPlacemarks() {
+        if (!mapInstance || Object.keys(allPlacemarks).length === 0) {
+            alert('Нет меток для отображения');
+            return;
+        }
+        
+        mapInstance.setBounds(mapInstance.geoObjects.getBounds(), {
+            checkZoomRange: true,
+            zoomMargin: 50
+        });
+    }
+
+    // Функция для возврата в центр города
+    function resetToCityCenter() {
+        if (mapInstance) {
+            mapInstance.setCenter(SLAVGOROD_CENTER, 13);
+        }
+    }
+
+    // Функция для выбора рекламного носителя
+    function selectAdboard(adboardId) {
+        const adboard = adboardsData.find(a => a.id === adboardId);
+        if (!adboard) return;
+
+        // Центрируем карту на выбранной метке
+        const placemark = allPlacemarks[adboardId];
+        if (placemark) {
+            mapInstance.setCenter([adboard.lat, adboard.lon], 16);
+            placemark.balloon.open();
+        }
+
+        // Подсвечиваем элемент в списке
+        if (adboardItems) {
+            adboardItems.forEach(item => {
+                item.classList.remove('active');
+                if (parseInt(item.dataset.id) === adboardId) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        }
+
+        // Показываем детальную информацию
+        showAdboardDetails(adboard);
+    }
+
+    // Функция для отображения детальной информации
+    function showAdboardDetails(adboard) {
+        const detailsContainer = document.getElementById('adboard-details');
+        const detailsContent = document.getElementById('details-content');
+        
+        let photoHtml = '';
+        if (adboard.photo) {
+            photoHtml = `
+                <div class="mb-4">
+                    <img src="${adboard.photo}" alt="${adboard.title}" 
+                         class="w-full h-64 object-cover rounded-lg shadow-md">
+                </div>
+            `;
+        }
+
+        let priceHtml = '';
+        if (adboard.price) {
+            priceHtml = `
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                    <div class="text-2xl font-bold text-orange-600">${adboard.price} ₽</div>
+                    <div class="text-orange-700">в месяц</div>
+                </div>
+            `;
+        }
+
+        detailsContent.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">${adboard.title}</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-700 mb-2">Адрес:</h3>
+                            <p class="text-gray-600">${adboard.address}</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-semibold text-gray-700 mb-2">Тип носителя:</h3>
+                            <span class="inline-block px-3 py-1 rounded-full 
+                                ${adboard.ad_type === 'billboard' ? 'bg-blue-100 text-blue-800' :
+                                  adboard.ad_type === 'led_screen' ? 'bg-green-100 text-green-800' :
+                                  adboard.ad_type === 'prismatron' ? 'bg-purple-100 text-purple-800' :
+                                  adboard.ad_type === 'citylight' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-gray-100 text-gray-800'}">
+                                ${adboard.get_ad_type_display}
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-semibold text-gray-700 mb-2">Координаты:</h3>
+                            <p class="text-gray-600">${adboard.lat}, ${adboard.lon}</p>
+                        </div>
+                        
+                        ${adboard.description ? `
+                        <div>
+                            <h3 class="font-semibold text-gray-700 mb-2">Описание:</h3>
+                            <p class="text-gray-600 whitespace-pre-line">${adboard.description}</p>
+                        </div>
+                        ` : ''}
+                        
+                        ${adboard.rental_terms ? `
+                        <div>
+                            <h3 class="font-semibold text-gray-700 mb-2">Условия аренды:</h3>
+                            <p class="text-gray-600 whitespace-pre-line">${adboard.rental_terms}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-1">
+                    ${priceHtml}
+                    ${photoHtml}
+                    
+                    ${adboard.contact_info ? `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Контактная информация:</h3>
+                        <p class="text-gray-600 whitespace-pre-line">${adboard.contact_info}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        detailsContainer.classList.remove('hidden');
+    }
+
+    // Функция фильтрации списка и меток
+    function filterAdboards() {
+        const searchText = document.getElementById('search-input').value.toLowerCase();
+        const filterType = document.getElementById('type-filter').value;
+
+        adboardItems.forEach(item => {
+            const title = item.querySelector('h3').textContent.toLowerCase();
+            const address = item.querySelector('p').textContent.toLowerCase();
+            const type = item.dataset.type;
+
+            const matchesSearch = title.includes(searchText) || address.includes(searchText);
+            const matchesType = !filterType || type === filterType;
+
+            if (matchesSearch && matchesType) {
+                item.style.display = 'block';
+                // Показываем метку на карте
+                const adboardId = parseInt(item.dataset.id);
+                if (allPlacemarks[adboardId]) {
+                    allPlacemarks[adboardId].options.set('visible', true);
+                }
+            } else {
+                item.style.display = 'none';
+                // Скрываем метку с карты
+                const adboardId = parseInt(item.dataset.id);
+                if (allPlacemarks[adboardId]) {
+                    allPlacemarks[adboardId].options.set('visible', false);
+                }
+            }
+        });
+    }
+
+    // Основная функция инициализации карты
+    function initializeMap() {
+        try {
+            // Создаем карту
+            ymaps.ready(function() {
+                mapInstance = new ymaps.Map('map', {
+                    center: SLAVGOROD_CENTER,
+                    zoom: 13,
+                    controls: ['zoomControl', 'fullscreenControl']
+                });
+
+                console.log('✅ Яндекс.Карты инициализированы');
+
+                // Добавляем метки
+                if (adboardsData.length > 0) {
+                    adboardsData.forEach(adboard => {
+                        const placemark = new ymaps.Placemark(
+                            [adboard.lat, adboard.lon],
+                            {
+                                balloonContentHeader: adboard.title,
+                                balloonContentBody: `
+                                    <div class="p-2 max-w-sm">
+                                        <p class="text-gray-600 mb-2">${adboard.address}</p>
+                                        <p class="text-sm mb-2"><strong>Тип:</strong> ${adboard.get_ad_type_display}</p>
+                                        <p class="text-sm mb-2"><strong>Координаты:</strong> ${adboard.lat}, ${adboard.lon}</p>
+                                        ${adboard.price ? `<p class="text-lg font-bold text-orange-600 mb-2">${adboard.price} ₽/месяц</p>` : ''}
+                                        <button class="select-adboard w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition" data-id="${adboard.id}">
+                                            Подробнее
+                                        </button>
+                                    </div>
+                                `,
+                                hintContent: adboard.title
+                            },
+                            {
+                                preset: 'islands#dotIcon',
+                                iconColor: getPlacemarkColor(adboard.ad_type)
+                            }
+                        );
+
+                        // Обработчик клика на метку
+                        placemark.events.add('click', function() {
+                            selectAdboard(adboard.id);
+                        });
+
+                        mapInstance.geoObjects.add(placemark);
+                        allPlacemarks[adboard.id] = placemark;
+                    });
+
+                    // Автоматически приближаемся ко всем меткам
+                    setTimeout(() => {
+                        if (Object.keys(allPlacemarks).length > 0) {
+                            zoomToAllPlacemarks();
+                        }
+                    }, 1000);
+                }
+
+                // Инициализируем обработчики для списка
+                adboardItems = document.querySelectorAll('.adboard-item');
+                adboardItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        const adboardId = parseInt(this.dataset.id);
+                        selectAdboard(adboardId);
+                    });
+                });
+
+                // Обработчики для кнопок управления картой
+                document.getElementById('zoom-to-all').addEventListener('click', zoomToAllPlacemarks);
+                document.getElementById('reset-center').addEventListener('click', resetToCityCenter);
+
+                // Обработчики для кнопок в балунах
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('select-adboard')) {
+                        const adboardId = parseInt(e.target.getAttribute('data-id'));
+                        selectAdboard(adboardId);
+                    }
+                });
+
+                // Поиск и фильтрация
+                document.getElementById('search-input').addEventListener('input', filterAdboards);
+                document.getElementById('type-filter').addEventListener('change', filterAdboards);
+
+            });
+
+        } catch (error) {
+            console.error('Ошибка при инициализации карты:', error);
+            document.getElementById('map').innerHTML = `
+                <div class="text-center p-8 text-red-600">
+                    <h3 class="text-lg font-bold">Ошибка загрузки карты</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMap();
+    });
+</script>
+{% endblock %}
