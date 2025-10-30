@@ -12,8 +12,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        .dropdown:hover .dropdown-menu {
-            display: block;
+        /* Десктопные выпадающие меню - с задержкой закрытия */
+        @media (min-width: 1024px) {
+            .desktop-dropdown .desktop-dropdown-menu {
+                display: none;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: opacity 0.2s ease, transform 0.2s ease;
+            }
+            
+            .desktop-dropdown:hover .desktop-dropdown-menu {
+                display: block;
+                opacity: 1;
+                transform: translateY(0);
+            }
+            
+            /* Задержка закрытия меню */
+            .desktop-dropdown {
+                position: relative;
+            }
+            
+            .desktop-dropdown-menu {
+                pointer-events: none;
+                transition-delay: 0.1s;
+            }
+            
+            .desktop-dropdown:hover .desktop-dropdown-menu {
+                pointer-events: auto;
+            }
+            
+            /* Создаем невидимую область для плавного перехода */
+            .desktop-dropdown::after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                left: 0;
+                right: 0;
+                height: 20px;
+                background: transparent;
+            }
         }
         
         .slider {
@@ -45,98 +82,98 @@
 <body class="font-sans bg-gray-50">
     <!-- Шапка -->
     <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <!-- Логотип и название -->
-            <div class="flex items-center">
-                <a href="/" class="flex items-center">
-                    {% if site_settings.logo %}
-                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 mr-3">
-                    {% else %}
-                    <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
-                        {{ site_settings.site_name|first }}
-                    </div>
-                    {% endif %}
-                    <h1 class="text-2xl font-bold text-gray-800">{{ site_settings.site_name }}</h1>
-                </a>
-            </div>
-            
-            <!-- Навигация -->
-            <nav class="hidden md:flex items-center space-x-8">
-
-                
-                <!-- Добавляем пункт меню для аренды -->
-                <a href="/map/" class="text-gray-700 hover:text-orange-600 font-medium">Аренда рекламных носителей</a>
-                
-                {% for category, pages in menu_items.items %}
-                    {% if pages %}
-                        {% if category == 'main' %}
-                            <!-- Главная страница -->
-                            <a href="/" class="text-gray-700 hover:text-orange-600 font-medium">Главная</a>
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <!-- Логотип и название -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        {% if site_settings.logo %}
+                        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 mr-3">
                         {% else %}
-                            <!-- Выпадающие меню для категорий -->
-                            <div class="dropdown relative">
-                                <button class="text-gray-700 hover:text-orange-600 font-medium flex items-center">
-                                    {{ pages.0.get_category_display }}
-                                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                                </button>
-                                <div class="dropdown-menu absolute hidden bg-white shadow-lg rounded-md mt-2 py-2 w-48">
-                                    {% for page in pages %}
-                                        <a href="/{{ page.slug }}/" class="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-600">
-                                            {{ page.title }}
-                                        </a>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                        <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
+                            {{ site_settings.site_name|first }}
+                        </div>
                         {% endif %}
-                    {% endif %}
-                {% endfor %}
+                        <h1 class="text-2xl font-bold text-gray-800">{{ site_settings.site_name }}</h1>
+                    </a>
+                </div>
                 
-                <!-- О нас -->
-                <a href="/info/" class="text-gray-700 hover:text-orange-600 font-medium">О нас</a>
-            </nav>
-            
-            <!-- Контакты -->
-            <div class="hidden md:block text-right">
-                <div class="text-orange-600 font-semibold">{{ site_settings.phone }}</div>
-                <div class="text-gray-600 text-sm">{{ site_settings.email }}</div>
+                <!-- Навигация для десктопа -->
+                <div class="hidden lg:flex items-center space-x-6 xl:space-x-8">
+                    <nav class="flex items-center space-x-6 xl:space-x-8">
+                        
+                        <!-- Аренда рекламных носителей -->
+                        <a href="/map/" class="text-gray-700 hover:text-orange-600 font-medium whitespace-nowrap">Аренда рекламных носителей</a>
+                        
+                        <!-- Категории меню -->
+                        {% for category, pages in menu_items.items %}
+                            {% if pages and category != 'main' %}
+                                <div class="desktop-dropdown relative">
+                                    <button class="text-gray-700 hover:text-orange-600 font-medium flex items-center whitespace-nowrap">
+                                        {{ pages.0.get_category_display }}
+                                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                    </button>
+                                    <div class="desktop-dropdown-menu absolute hidden bg-white shadow-lg rounded-md mt-2 py-2 w-64 z-50"> <!-- Увеличили ширину -->
+                                        {% for page in pages %}
+                                            <a href="/{{ page.slug }}/" class="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-600 whitespace-normal break-words min-w-0"> <!-- Добавили перенос слов -->
+                                                {{ page.title }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- О нас -->
+                        <a href="/info/" class="text-gray-700 hover:text-orange-600 font-medium whitespace-nowrap">О нас</a>
+                    </nav>
+                    
+                    <!-- Контакты для десктопа -->
+                    <div class="text-right ml-6 border-l pl-6 border-gray-200">
+                        <div class="text-orange-600 font-semibold whitespace-nowrap">{{ site_settings.phone }}</div>
+                        <div class="text-gray-600 text-sm whitespace-nowrap">{{ site_settings.email }}</div>
+                    </div>
+                </div>
+                
+                <!-- Кнопка бургер-меню -->
+                <button class="lg:hidden text-gray-700" id="mobile-menu-button">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
             </div>
-            
-            <!-- Мобильное меню -->
-            <button class="md:hidden text-gray-700" id="mobile-menu-button">
-                <i class="fas fa-bars text-2xl"></i>
-            </button>
         </div>
         
         <!-- Мобильное меню (скрыто) -->
-        <div class="md:hidden hidden bg-white border-t" id="mobile-menu">
+        <div class="lg:hidden hidden bg-white border-t" id="mobile-menu">
             <div class="container mx-auto px-4 py-3">
                 <div class="flex flex-col space-y-4">
-                    <a href="/" class="text-gray-700 font-medium">Главная</a>
+                    <a href="/" class="text-gray-700 font-medium py-2 border-b border-gray-100">Главная</a>
                     
-                    <!-- Добавляем пункт для аренды в мобильное меню -->
-                    <a href="/map/" class="text-gray-700 font-medium">Аренда рекламных носителей</a>
+                    <a href="/map/" class="text-gray-700 font-medium py-2 border-b border-gray-100">Аренда рекламных носителей</a>
                     
                     {% for category, pages in menu_items.items %}
                         {% if pages and category != 'main' %}
-                        <div class="dropdown">
-                            <button class="text-gray-700 font-medium flex items-center justify-between w-full">
-                                {{ pages.0.get_category_display }}
+                        <div class="mobile-dropdown border-b border-gray-100 pb-2">
+                            <button class="mobile-dropdown-btn text-gray-700 font-medium flex items-center justify-between w-full py-2">
+                                <span>{{ pages.0.get_category_display }}</span>
                                 <i class="fas fa-chevron-down ml-2 text-xs"></i>
                             </button>
-                            <div class="dropdown-menu hidden pl-4 mt-2">
+                            <div class="mobile-dropdown-menu hidden pl-4 mt-2 space-y-2">
                                 {% for page in pages %}
-                                    <a href="/{{ page.slug }}/" class="block py-2 text-gray-700">{{ page.title }}</a>
+                                    <a href="/{{ page.slug }}/" class="block py-2 text-gray-700 border-l-2 border-orange-200 pl-3 break-words"> <!-- Добавили перенос слов -->
+                                        {{ page.title }}
+                                    </a>
                                 {% endfor %}
                             </div>
                         </div>
                         {% endif %}
                     {% endfor %}
                     
-                    <a href="/info/" class="text-gray-700 font-medium">О нас</a>
+                    <a href="/info/" class="text-gray-700 font-medium py-2 border-b border-gray-100">О нас</a>
                     
-                    <div class="pt-4 border-t">
+                    <div class="pt-4 border-t border-gray-200">
                         <div class="text-orange-600 font-semibold">{{ site_settings.phone }}</div>
                         <div class="text-gray-600 text-sm">{{ site_settings.email }}</div>
+                        <div class="text-gray-500 text-xs mt-1">{{ site_settings.working_hours }}</div>
                     </div>
                 </div>
             </div>
@@ -152,9 +189,9 @@
     <!-- Подвал -->
     <footer class="bg-gray-800 text-white py-12 px-4">
         <div class="container mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- О компании -->
-                <div>
+                <div class="lg:col-span-1">
                     <div class="flex items-center mb-4">
                         {% if site_settings.logo %}
                         <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 mr-3">
@@ -169,7 +206,7 @@
                 </div>
                 
                 <!-- Контакты -->
-                <div>
+                <div class="lg:col-span-1">
                     <h3 class="text-lg font-semibold mb-4">Контакты</h3>
                     <ul class="space-y-3">
                         <li class="flex items-start">
@@ -192,24 +229,24 @@
                 </div>
                 
                 <!-- Услуги -->
-                <div>
+                <div class="lg:col-span-1">
                     <h3 class="text-lg font-semibold mb-4">Услуги</h3>
                     <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-300 hover:text-white">Наружная реклама</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Интерьерная реклама</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Широкоформатная печать</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Сувенирная продукция</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Наружная реклама</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Интерьерная реклама</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Широкоформатная печать</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Сувенирная продукция</a></li>
                     </ul>
                 </div>
                 
                 <!-- Быстрые ссылки -->
-                <div>
+                <div class="lg:col-span-1">
                     <h3 class="text-lg font-semibold mb-4">Быстрые ссылки</h3>
                     <ul class="space-y-2">
-                        <li><a href="/map/" class="text-gray-300 hover:text-white">Аренда рекламных носителей</a></li>
-                        <li><a href="/info/" class="text-gray-300 hover:text-white">О нас</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Портфолио</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Контакты</a></li>
+                        <li><a href="/map/" class="text-gray-300 hover:text-white transition">Аренда рекламных носителей</a></li>
+                        <li><a href="/info/" class="text-gray-300 hover:text-white transition">О нас</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Портфолио</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Контакты</a></li>
                     </ul>
                 </div>
             </div>
@@ -229,20 +266,120 @@
                 const mobileMenu = document.getElementById('mobile-menu');
                 if (mobileMenu) {
                     mobileMenu.classList.toggle('hidden');
+                    // Анимация иконки бургера
+                    const icon = mobileMenuButton.querySelector('i');
+                    if (mobileMenu.classList.contains('hidden')) {
+                        icon.className = 'fas fa-bars text-2xl';
+                    } else {
+                        icon.className = 'fas fa-times text-2xl';
+                    }
                 }
             });
         }
 
         // Выпадающие меню для мобильной версии
         document.addEventListener('DOMContentLoaded', function() {
-            const mobileDropdowns = document.querySelectorAll('#mobile-menu .dropdown');
+            const mobileDropdowns = document.querySelectorAll('.mobile-dropdown');
             mobileDropdowns.forEach(dropdown => {
-                const button = dropdown.querySelector('button');
-                const menu = dropdown.querySelector('.dropdown-menu');
+                const button = dropdown.querySelector('.mobile-dropdown-btn');
+                const menu = dropdown.querySelector('.mobile-dropdown-menu');
                 
                 button.addEventListener('click', () => {
+                    // Закрываем все остальные мобильные меню перед открытием текущего
+                    mobileDropdowns.forEach(otherDropdown => {
+                        if (otherDropdown !== dropdown) {
+                            const otherMenu = otherDropdown.querySelector('.mobile-dropdown-menu');
+                            const otherIcon = otherDropdown.querySelector('.mobile-dropdown-btn i');
+                            otherMenu.classList.add('hidden');
+                            otherIcon.className = 'fas fa-chevron-down ml-2 text-xs';
+                        }
+                    });
+                    
                     menu.classList.toggle('hidden');
+                    // Анимация стрелки
+                    const icon = button.querySelector('i');
+                    if (menu.classList.contains('hidden')) {
+                        icon.className = 'fas fa-chevron-down ml-2 text-xs';
+                    } else {
+                        icon.className = 'fas fa-chevron-up ml-2 text-xs';
+                    }
                 });
+            });
+
+            // Улучшенное управление десктопными меню
+            const desktopDropdowns = document.querySelectorAll('.desktop-dropdown');
+            let closeTimeouts = new Map(); // Храним таймеры для каждого меню
+            
+            // Функция для закрытия всех меню кроме указанного
+            function closeAllDropdowns(exceptDropdown = null) {
+                desktopDropdowns.forEach(dropdown => {
+                    if (dropdown !== exceptDropdown) {
+                        const menu = dropdown.querySelector('.desktop-dropdown-menu');
+                        // Немедленно закрываем меню
+                        menu.style.opacity = '0';
+                        menu.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            menu.style.display = 'none';
+                        }, 200);
+                        
+                        // Очищаем таймер для этого меню
+                        if (closeTimeouts.has(dropdown)) {
+                            clearTimeout(closeTimeouts.get(dropdown));
+                            closeTimeouts.delete(dropdown);
+                        }
+                    }
+                });
+            }
+            
+            desktopDropdowns.forEach(dropdown => {
+                const menu = dropdown.querySelector('.desktop-dropdown-menu');
+                
+                dropdown.addEventListener('mouseenter', () => {
+                    // Очищаем таймер закрытия для этого меню
+                    if (closeTimeouts.has(dropdown)) {
+                        clearTimeout(closeTimeouts.get(dropdown));
+                        closeTimeouts.delete(dropdown);
+                    }
+                    
+                    // Закрываем все другие меню
+                    closeAllDropdowns(dropdown);
+                    
+                    // Открываем текущее меню
+                    menu.style.display = 'block';
+                    setTimeout(() => {
+                        menu.style.opacity = '1';
+                        menu.style.transform = 'translateY(0)';
+                    }, 10);
+                });
+                
+                dropdown.addEventListener('mouseleave', () => {
+                    // Устанавливаем таймер закрытия для этого меню
+                    const timeoutId = setTimeout(() => {
+                        menu.style.opacity = '0';
+                        menu.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            menu.style.display = 'none';
+                        }, 200);
+                        closeTimeouts.delete(dropdown);
+                    }, 150); // Задержка 150ms перед началом анимации закрытия
+                    
+                    closeTimeouts.set(dropdown, timeoutId);
+                });
+            });
+
+            // Закрываем все меню при клике вне области навигации
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.desktop-dropdown') && !e.target.closest('.mobile-dropdown')) {
+                    closeAllDropdowns();
+                    
+                    // Также закрываем мобильные меню
+                    mobileDropdowns.forEach(dropdown => {
+                        const menu = dropdown.querySelector('.mobile-dropdown-menu');
+                        const icon = dropdown.querySelector('.mobile-dropdown-btn i');
+                        menu.classList.add('hidden');
+                        icon.className = 'fas fa-chevron-down ml-2 text-xs';
+                    });
+                }
             });
         });
 
