@@ -1,0 +1,27 @@
+/* Фикс для CKEditor в инлайнах админки */
+.inline-group .django-ckeditor-widget {
+    width: 100% !important;
+}
+
+.inline-group .cke {
+    width: 100% !important;
+}
+
+.inline-group .cke_contents {
+    min-height: 200px !important;
+}
+
+/* Особенно для TextHtmlSection */
+.field-html_content .django-ckeditor-widget,
+.field-content .django-ckeditor-widget {
+    width: 100% !important;
+}
+
+/* Увеличиваем ширину колонок в инлайнах */
+.inline-related {
+    width: 100% !important;
+}
+
+.inline-group .form-row {
+    width: 100% !important;
+}

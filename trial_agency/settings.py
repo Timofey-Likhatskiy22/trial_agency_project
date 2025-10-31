@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'ckeditor',
+    'ckeditor_uploader',
     'pages',
     'constructor',
     'map_rental',
@@ -131,5 +133,38 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 400,
+        'width': '100%',
+        'toolbar_Full': [
+            ['Styles', 'Format', 'Bold', 'Italic', 'Underline', 'Strike', 'SpellChecker', 'Undo', 'Redo'],
+            ['Link', 'Unlink', 'Anchor'],
+            ['Image', 'Flash', 'Table', 'HorizontalRule'],
+            ['TextColor', 'BGColor'],
+            ['Smiley', 'SpecialChar'],
+            ['Source'],
+            ['CodeSnippet'],
+        ],
+        'extraPlugins': 'codesnippet',
+        'codeSnippet_theme': 'monokai',
+        'removePlugins': 'exportpdf',  # Убираем ошибку с PDF
+    },
+    'admin': {
+        'toolbar': 'custom',
+        'toolbar_custom': [
+            ['Bold', 'Italic', 'Underline', 'Strike'],
+            ['NumberedList', 'BulletedList'],
+            ['Link', 'Unlink'],
+            ['Image', 'Table'],
+            ['Source']
+        ],
+        'height': 300,
+        'width': 800,
+    }
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

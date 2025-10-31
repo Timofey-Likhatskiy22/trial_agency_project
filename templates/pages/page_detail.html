@@ -15,7 +15,7 @@
         <div class="relative z-10 bg-gradient-to-r {{ hero.background_gradient }} text-white py-20 px-4" style="color: {{ hero.text_color }};">
             <div class="container mx-auto">
                 <h2 class="text-4xl md:text-5xl font-bold mb-4">{{ hero.title }}</h2>
-                <p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ hero.subtitle }}</p>
+                <p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ hero.subtitle|safe }}</p>
             </div>
         </div>
     </section>
@@ -33,7 +33,7 @@
                     <div class="container mx-auto flex flex-col md:flex-row items-center">
                         <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
                             {% if slide.title %}<h2 class="text-4xl md:text-5xl font-bold mb-4">{{ slide.title }}</h2>{% endif %}
-                            {% if slide.subtitle %}<p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ slide.subtitle }}</p>{% endif %}
+                            {% if slide.subtitle %}<p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ slide.subtitle|safe }}</p>{% endif %}
                             {% if slide.button_text and slide.get_link %}
                             <a href="{{ slide.get_link }}" class="bg-white text-gray-800 px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition">
                                 {{ slide.button_text }}
@@ -81,7 +81,7 @@
                 
                 <div class="md:w-1/2 {% if text_image.image_position == 'left' %}md:pl-8{% else %}md:pr-8{% endif %}">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">{{ text_image.title }}</h2>
-                    <div class="text-gray-600 mb-6">{{ text_image.content|linebreaks }}</div>
+                    <div class="text-gray-600 mb-6">{{ text_image.content|safe }}</div>
                     {% if text_image.button_text and text_image.get_link %}
                     <a href="{{ text_image.get_link }}" class="bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-700 transition">
                         {{ text_image.button_text }}
@@ -112,7 +112,7 @@
                 
                 <div class="md:w-1/2 {% if text_html.html_position == 'left' %}md:pl-8{% else %}md:pr-8{% endif %}">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">{{ text_html.title }}</h2>
-                    <div class="text-gray-600 mb-6">{{ text_html.content|linebreaks }}</div>
+                    <div class="text-gray-600 mb-6">{{ text_html.content|safe }}</div>
                     {% if text_html.button_text and text_html.get_link %}
                     <a href="{{ text_html.get_link }}" class="bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-700 transition">
                         {{ text_html.button_text }}
@@ -144,7 +144,7 @@
                     </div>
                     <div class="p-6">
                         <h3 class="text-xl font-bold text-gray-800 mb-3">{{ card.title }}</h3>
-                        <p class="text-gray-600 mb-4">{{ card.description }}</p>
+                        <p class="text-gray-600 mb-4">{{ card.description|safe }}</p>
                         {% if card.button_text and card.get_link %}
                         <a href="{{ card.get_link }}" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
                             {{ card.button_text }} <i class="fas fa-arrow-right ml-2"></i>
@@ -171,7 +171,7 @@
                         <i class="{{ feature.icon }} text-xl" style="color: {{ feature.icon_color }};"></i>
                     </div>
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ feature.title }}</h3>
-                    <p class="text-gray-600">{{ feature.description }}</p>
+                    <p class="text-gray-600">{{ feature.description|safe }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -192,7 +192,7 @@
                     {% if image.title or image.description %}
                     <div class="p-4">
                         {% if image.title %}<h3 class="text-lg font-semibold text-gray-800 mb-2">{{ image.title }}</h3>{% endif %}
-                        {% if image.description %}<p class="text-gray-600 text-sm">{{ image.description }}</p>{% endif %}
+                        {% if image.description %}<p class="text-gray-600 text-sm">{{ image.description|safe }}</p>{% endif %}
                     </div>
                     {% endif %}
                 </div>

@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/ckeditor_inline_fix.css' %}">
+<style>
+    /* Дополнительные стили для инлайнов */
+    .django-ckeditor-widget {
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    .cke_chrome {
+        width: 100% !important;
+    }
+    
+    /* Увеличиваем ширину текстовых полей в инлайнах */
+    .inline-group input[type="text"], 
+    .inline-group textarea {
+        width: 95% !important;
+    }
+    
+    /* Конкретно для полей контента */
+    .field-content .django-ckeditor-widget,
+    .field-html_content .django-ckeditor-widget,
+    .field-description .django-ckeditor-widget {
+        width: 100% !important;
+        min-width: 800px !important;
+    }
+</style>
+{% endblock %}

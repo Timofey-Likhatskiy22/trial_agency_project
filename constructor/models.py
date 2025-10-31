@@ -1,4 +1,6 @@
 from django.db import models
+from ckeditor.fields import RichTextField
+from ckeditor_uploader.fields import RichTextUploadingField
 
 class Page(models.Model):
     CATEGORY_CHOICES = [
@@ -53,7 +55,7 @@ class SiteSettings(models.Model):
 class HeroSection(models.Model):
     page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='hero_sections')
     title = models.CharField(max_length=200, verbose_name="Заголовок")
-    subtitle = models.TextField(verbose_name="Подзаголовок")
+    subtitle = RichTextField(verbose_name="Подзаголовок")
     background_image = models.ImageField(upload_to='hero/', blank=True, null=True, verbose_name="Фоновое изображение")
     background_gradient = models.CharField(max_length=100, default="from-orange-800 to-orange-600", verbose_name="Градиент")
     gradient_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=1.0, 
@@ -73,7 +75,7 @@ class HeroSection(models.Model):
 class TextImageSection(models.Model):
     page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='text_image_sections')
     title = models.CharField(max_length=200, verbose_name="Заголовок")
-    content = models.TextField(verbose_name="Содержание")
+    content = RichTextUploadingField(verbose_name="Содержание")
     image = models.ImageField(upload_to='text_images/', verbose_name="Изображение")
     image_position = models.CharField(
         max_length=10,
@@ -116,7 +118,7 @@ class ServicesSection(models.Model):
 class ServiceCard(models.Model):
     section = models.ForeignKey(ServicesSection, on_delete=models.CASCADE, related_name='cards')
     title = models.CharField(max_length=200, verbose_name="Заголовок")
-    description = models.TextField(verbose_name="Описание")
+    description = RichTextField(verbose_name="Описание")
     icon = models.CharField(max_length=50, verbose_name="Иконка")
     icon_color = models.CharField(max_length=7, default="#3B82F6", verbose_name="Цвет иконки")
     button_text = models.CharField(max_length=50, blank=True, verbose_name="Текст кнопки")
@@ -154,7 +156,7 @@ class FeaturesSection(models.Model):
 class Feature(models.Model):
     section = models.ForeignKey(FeaturesSection, on_delete=models.CASCADE, related_name='features')
     title = models.CharField(max_length=200, verbose_name="Заголовок")
-    description = models.TextField(verbose_name="Описание")
+    description = RichTextField(verbose_name="Описание")
     icon = models.CharField(max_length=50, verbose_name="Иконка")
     icon_color = models.CharField(max_length=7, default="#3B82F6", verbose_name="Цвет иконки")
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
@@ -183,7 +185,7 @@ class HtmlSection(models.Model):
 class TextHtmlSection(models.Model):
     page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='text_html_sections')
     title = models.CharField(max_length=200, verbose_name="Заголовок")
-    content = models.TextField(verbose_name="Текст")
+    content = RichTextField(verbose_name="Текст")
     html_content = models.TextField(verbose_name="HTML-контент", help_text="Будет вставлен как есть")
     html_position = models.CharField(
         max_length=10,
@@ -229,7 +231,7 @@ class SliderSection(models.Model):
 class Slide(models.Model):
     slider = models.ForeignKey(SliderSection, on_delete=models.CASCADE, related_name='slides')
     title = models.CharField(max_length=200, blank=True, verbose_name="Заголовок")
-    subtitle = models.TextField(blank=True, verbose_name="Подзаголовок")
+    subtitle = RichTextField(blank=True, verbose_name="Подзаголовок")
     image = models.ImageField(upload_to='slides/', verbose_name="Изображение")
     button_text = models.CharField(max_length=50, blank=True, verbose_name="Текст кнопки")
     internal_link = models.ForeignKey(Page, on_delete=models.SET_NULL, null=True, blank=True, 
@@ -268,7 +270,7 @@ class GalleryImage(models.Model):
     section = models.ForeignKey(GallerySection, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='gallery/', verbose_name="Изображение")
     title = models.CharField(max_length=200, blank=True, verbose_name="Заголовок")
-    description = models.TextField(blank=True, verbose_name="Описание")
+    description = RichTextField(blank=True, verbose_name="Описание")
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
     
     class Meta:
