@@ -33,15 +33,17 @@
                     <div class="container mx-auto flex flex-col md:flex-row items-center">
                         <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
                             {% if slide.title %}<h2 class="text-4xl md:text-5xl font-bold mb-4">{{ slide.title }}</h2>{% endif %}
-                            {% if slide.subtitle %}<p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ slide.subtitle|safe }}</p>{% endif %}
+                            {% if slide.subtitle %}<p class="text-xl md:text-2xl mb-8 max-w-2xl">{{ slide.subtitle|linebreaks }}</p>{% endif %}
                             {% if slide.button_text and slide.get_link %}
-                            <a href="{{ slide.get_link }}" class="bg-white text-gray-800 px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition">
-                                {{ slide.button_text }}
-                            </a>
+                            <div class="mt-8">
+                                <a href="{{ slide.get_link }}" class="inline-block bg-white text-gray-800 px-8 py-4 rounded-md font-semibold hover:bg-gray-100 transition text-lg">
+                                    {{ slide.button_text }}
+                                </a>
+                            </div>
                             {% endif %}
                         </div>
                         <div class="md:w-1/2">
-                            <img src="{{ slide.image.url }}" alt="{{ slide.title }}" class="rounded-lg shadow-lg w-full h-auto">
+                            <img src="{{ slide.image.url }}" alt="{{ slide.title }}" class="rounded-lg shadow-lg w-full h-auto max-h-96 object-cover">
                         </div>
                     </div>
                 </div>
@@ -58,11 +60,11 @@
         {% endif %}
         
         {% if slider.show_controls and slider.slides.all|length > 1 %}
-        <button class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none slider-prev">
-            <i class="fas fa-chevron-left"></i>
+        <button class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-30 text-white p-3 rounded-full hover:bg-opacity-50 focus:outline-none slider-prev z-10">
+            <i class="fas fa-chevron-left text-xl"></i>
         </button>
-        <button class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none slider-next">
-            <i class="fas fa-chevron-right"></i>
+        <button class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-30 text-white p-3 rounded-full hover:bg-opacity-50 focus:outline-none slider-next z-10">
+            <i class="fas fa-chevron-right text-xl"></i>
         </button>
         {% endif %}
     </section>

@@ -231,7 +231,7 @@ class SliderSection(models.Model):
 class Slide(models.Model):
     slider = models.ForeignKey(SliderSection, on_delete=models.CASCADE, related_name='slides')
     title = models.CharField(max_length=200, blank=True, verbose_name="Заголовок")
-    subtitle = RichTextField(blank=True, verbose_name="Подзаголовок")
+    subtitle = models.TextField(blank=True, verbose_name="Подзаголовок")  # Изменено обратно на TextField
     image = models.ImageField(upload_to='slides/', verbose_name="Изображение")
     button_text = models.CharField(max_length=50, blank=True, verbose_name="Текст кнопки")
     internal_link = models.ForeignKey(Page, on_delete=models.SET_NULL, null=True, blank=True, 
